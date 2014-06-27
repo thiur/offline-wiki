@@ -176,6 +176,13 @@
           test('Local Storage', window.localStorage);
           test('querySelectorAll', document.querySelectorAll);
         </script>
+
+        <script>
+          // CORS errors because of https
+          if(location.protocol == 'https:' && location.hostname == "offline-wiki.googlecode.com"){
+            location.protocol = 'http:';
+          }
+        </script>
         </ul>
 
             
