@@ -60,7 +60,7 @@
 function VirtualFile(name, size, chunksize, network){
   //var chunksize = 2 * 1024 //512 * 1024;
   //var blocksize = 1 * 1024 //200 * 1024; //blocksize must be < chunksize
-  var defaultsize = 1024 * 1024 * 1024 + 1;
+  var defaultsize = 1024 * 1024 * 1024 * 3 + 1;
   var initialized = false;
   var file, fileEntry, db, sql;
   var persistent = false;
