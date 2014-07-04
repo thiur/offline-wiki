@@ -82,15 +82,13 @@
   </p>
    <p>
     <select id="dump" onchange="switch_dump(this.value)">
-
       <option value="leet">1337 December 2011 (13.7MB)</option>
       <option value="pi">314k December 2011 (1GB) </option>
       <option value="semega">500k October 2012 (1.3GB) </option>
       <option value="twelve">1960 October 2012 (21MB) </option>
       <option value="simple">Simple English October 2012 (52MB) </option>
       <option value="simple2014">Simple English June 2014 (59MB) </option>
-      <option value="simplex">800 Simple English June 2014 (2MB) </option>
-
+      <option value="simplex">1k Simple English June 2014 (2MB) </option>
     </select>
    </p>
     <p>
@@ -144,12 +142,7 @@
         This application saves and <b>downloads a copy</b> of nearly all of the textual content of the <b>English Wikipedia</b> locally so that it can be <b>accessed without internet connectivity</b>. It downloads and saves a compressed dump file and an index, 14MB for the small version and 1GB for the larger one (you can select which one from the <a href="?Special:Settings">settings</a>). Using WebWorkers and the File API, it seeks to a specific part of the compressed dump, decompresses it with a pure javascript implementation of LZMA and renders the Wikitext as HTML. All of this happens almost <b>instantly</b>.
         <h2>Install</h2>
         <p>
-          You don't really need to, just <b>bookmark this page</b> and you can use it any time with or without internet access. If you want the convenience of getting to this from your new tab page, install the <a href="https://chrome.google.com/webstore/detail/oehajijgnimplajibelflobkdfggmnka">chrome app</a>.
-        </p>
-        <p>
-        <a href="https://chrome.google.com/webstore/detail/oehajijgnimplajibelflobkdfggmnka">
-        <img src="image/badge.png">
-        </a>
+          You don't really need to, just <b>bookmark this page</b> and you can use it any time with or without internet access. This should work for Google Chrome, Opera, Firefox and Safari. It works best in Chrome, which supports requestFileSystem (other browsers  are backed by a less-efficient IndexedDB/WebSQL store).
         </p>
         <h2>Credits</h2>
         <p>
