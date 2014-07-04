@@ -1,58 +1,58 @@
 /*
   What exactly is this?
-  
+
   Well, first let's discuss what exactly offline-wiki needs to do
   in order to get a better picture of what hole this fills.
-  
+
   Offline Wiki needs to work offline, that's a pretty big feature.
   I don't think that needs explanation, but I feel like giving an
   explanation anyway. Or maybe not. Okay, I changed my mind. Maybe
   I'll change my mind again if I think of a good excuse to waste
   your time like that.
-  
+
   Offline Wiki runs in the browser, something which is usually online.
   This is actually part of the calling of the project, because browsers
-  are exceedingly useless while offline, and this sort of brings a 
+  are exceedingly useless while offline, and this sort of brings a
   vague semblance of utility to something which usually becomes useless.
-  
+
   However, this prompts an interesting challenge, for Offline Wiki must
   maintain reasonable utility while online and offline. So then, a virtual
   filesystem with multiple supporting backends becomes useful.
-  
+
   At least one layer of abstraction would make sense, since you can do
   a binary search on a networked file just as well as a local file. It
-  would also be useful to treat the local file as a sort of cache, so 
+  would also be useful to treat the local file as a sort of cache, so
   that all data which comes from the great fluffy panda in the sky is
   recorded for posterity.
-  
+
   But then another layer of abstraction becomes useful because Firefox
   doesn't implement the FileSystem API, while Chrome's implementation of
   IndexedDB crashes (the entire browser!) when you try saving some typed
   arrays (I dont know specifics, I was too bored to investigate).
-  
+
   This Virtual File API also uses a bitset to calculate download progress
   quickly. The bitset is really just a lightweight representation of whatever
   is saved. The only use of this is for the popcount function, which takes
   that bitset and counts the number of downloaded chunks in order to generate
   a purty progress bar.
-  
+
   I guess that bitset may also be useful for calculating the 'most recently
-  downloaded article', which is a cool feature that totally needs to be 
+  downloaded article', which is a cool feature that totally needs to be
   implemented in the next version which employs this backend.
-  
+
   Since compression algorithms require a definite start/finish which may not
   necessarily align with the chunk boundaries (which are absolutely arbitrary
   by the way), it needs a layer of abstraction above the readChunk method.
-  
+
   This is the readBlock method. It returns a block which is a unit of data
   always less than the size of the chunk. Sometimes it needs to read two chunks
   in order to get the necessary amount of data. Maybe in the future, readBlock
   will be able to handle non-fixed sizes for blocks and maybe even blocks larger
   than the chunk.
-  
+
   It calls readChunk once or twice in order to get the data and neatly trims
   and slices it until it is fit to be returned.
-  
+
   So yeah, here you have it. Hybrid online/offline virtual files. I should totally
   rework this to be more object-orient-ish.
 */
@@ -66,7 +66,7 @@ function VirtualFile(name, size, chunksize, network){
   var persistent = false;
   var terminate = false;
   var blobType;
-  
+
   function testSliceType(){
     var bb = createBlobBuilder();
     if(!bb && window.Blob){
@@ -82,10 +82,10 @@ function VirtualFile(name, size, chunksize, network){
         alert("Apparently the future, assuming you are in the future, is really messed up by mid-2011 standards.");
       }
     }
-    
+
   }
 
-  
+
   function blobSlice(blob, start, length){
     if(blob.webkitSlice){
       return blob.webkitSlice(start, start + length);
@@ -163,7 +163,7 @@ function VirtualFile(name, size, chunksize, network){
     }
     return B
   }
-  
+
   var chunks = Math.ceil(size/chunksize);
   var bitfield = new Uint8Array(Math.ceil(Math.ceil(chunks/8)/3)*3);
   var dec = d64("" + localStorage[name+'_bitset']);
@@ -172,13 +172,13 @@ function VirtualFile(name, size, chunksize, network){
   }else{
     console.log("warning! bitset invalid. building new one.", bitfield.length);
   }
-  
+
   function checkBlock(position){
     var c = Math.floor(position / chunksize);
     return getbit(c);
   }
-  
-  function errorHandler(f){ 
+
+  function errorHandler(f){
     console.log(f);
   }
   var rfs = (window.requestFileSystem||window.webkitRequestFileSystem);
@@ -197,10 +197,10 @@ function VirtualFile(name, size, chunksize, network){
             })
           }, errorHandler);
         }, errorHandler);
-      }, 
+      },
       function(e){
         console.log("Quota Request error:", e)
-      }); 
+      });
   }else if(indexedDB){
     /*
       I REALLY HAVE NO IDEA HOW TO DO THIS
@@ -243,12 +243,12 @@ function VirtualFile(name, size, chunksize, network){
     console.log("no persistant storage space!");
     initialized = true;
   }
-  
-  
+
+
   function SQLErrorHandler(e){
     console.log(e.message)
   }
-  
+
   function readBlock(position, blocksize, callback){
     var result = new Uint8Array(blocksize);
     var delta = 0;
@@ -278,11 +278,11 @@ function VirtualFile(name, size, chunksize, network){
     }
     readPart();
   }
-  
+
   function readText(position, blocksize, callback){
     readBlock(position, blocksize, textReader(callback))
   }
-  
+
   function textReader(callback){
     return function(buffer){
       if(buffer == false){
@@ -307,7 +307,7 @@ function VirtualFile(name, size, chunksize, network){
       }
     }
   }
-  
+
   function readChunkText(chunk, callback){
     readChunk(chunk, textReader(callback));
   }
@@ -333,20 +333,20 @@ function VirtualFile(name, size, chunksize, network){
       }
     });
   }
-  
+
   function downloadContiguousChunks(start, maximum, callback){
     var end = start + 1; //read minimum of one chunk
     if(start > chunks) return callback(false);
     while(!getbit(end) && (end - start) < maximum && end < chunks) end++;
     //console.log('reading', end-start,'chunks starting at',start);
-    
+
     readChunksXHR(start, end - start, function(e){
       //console.log("read from XHR", name);
       if(e != false) writeChunksPersistent(start, e, callback);
     });
-    
+
   }
-  
+
   function readChunkPersistent(chunk, callback){
     if(terminate) return;
     if(fileEntry){
@@ -356,10 +356,10 @@ function VirtualFile(name, size, chunksize, network){
     }else if(sql){
       readChunkSql(chunk, callback);
     }else{
-      callback(false); 
+      callback(false);
     }
   }
-  
+
   function readChunkSql(chunk, callback){
     sql.readTransaction(function (t) {
       t.executeSql('SELECT data FROM fs WHERE chunk=?', [chunk], function (t, r) {
@@ -377,8 +377,8 @@ function VirtualFile(name, size, chunksize, network){
       });
     });
   }
-  
-  
+
+
   function writeChunksPersistent(chunk, data, callback){
     if(terminate) return;
     if(fileEntry){
@@ -389,7 +389,7 @@ function VirtualFile(name, size, chunksize, network){
       callback(data, -1);
     }
   }
-  
+
   function writeChunksDB(chunk, data, callback){
     /*var bb = createBlobBuilder();
     bb.append(data);
@@ -421,15 +421,15 @@ function VirtualFile(name, size, chunksize, network){
     }
     iterate();
   }
-  
-  
-  
+
+
+
   function writeChunksFile(chunk, data, callback){
-    fileEntry.createWriter(function(fileWriter) {    
+    fileEntry.createWriter(function(fileWriter) {
       if(fileWriter.readyState != 0){
         console.debug("sopmething weird happened, readySTate not zero", fileWriter.readyState);
       }
-      
+
       function writeData(){
         fileWriter.seek(chunksize * chunk);
         fileWriter.write(blob);
@@ -444,7 +444,7 @@ function VirtualFile(name, size, chunksize, network){
         }
       }
       var blob = createBlobFromBuffer(data)
-      
+
       if(chunksize * chunk > fileWriter.length){
         fileWriter.truncate(chunksize * chunk);
         fileWriter.onwrite = function(){
@@ -453,7 +453,7 @@ function VirtualFile(name, size, chunksize, network){
       }else writeData();
     })
   }
-  
+
   function writeChunkDB(chunk, data, callback){
     if(db){
       writeChunkIndexedDB(chunk, data, callback);
@@ -461,8 +461,8 @@ function VirtualFile(name, size, chunksize, network){
       writeChunkSql(chunk, data, callback);
     }
   }
-  
-  
+
+
   function writeChunkSql(chunk, data, callback){
 
     sql.transaction(function(tx){
@@ -474,9 +474,11 @@ function VirtualFile(name, size, chunksize, network){
       callback(data);
     })
   }
-  
+
   function writeChunkIndexedDB(chunk, data, callback){
-    var trans = db.transaction(['fs'], IDBTransaction.READ_WRITE);
+    //var trans = db.transaction(['fs'], IDBTransaction.READ_WRITE);
+    var trans = db.transaction(['fs'], 'readwrite');
+    
     var store = trans.objectStore('fs');
     var req = store.put({
       data: data,
@@ -518,11 +520,11 @@ function VirtualFile(name, size, chunksize, network){
       callback(result.value.data);
     }
   }
-  
+
   function readChunkXHR(chunk, callback){
     readChunksXHR(chunk, chunksize, callback);
   }
-  
+
   function readChunksXHR(chunk, size, callback){
     //return callback(false); //simulate offline
     var xhr = new XMLHttpRequest();
@@ -544,31 +546,31 @@ function VirtualFile(name, size, chunksize, network){
     }
     xhr.send(null);
   }
-  
+
   function reset(){
     if(persistent == 1){
       resetFile();
     }else if(persistent == 2){
-      resetDB(); 
+      resetDB();
     }else if(persistent == 3){
       resetSql();
     }
     localStorage[name+'_bitset'] = '';
     initialized = false;
   }
-  
+
   function resetFile(){
     fileEntry.remove(function(){
       console.log("removed file")
     })
   }
-  
+
   function resetDB(){
     console.log('tring to delete database', name);
     indexedDB.deleteDatabase(name+'_indexed');
     console.log('deleted database', name);
   }
-  
+
   function resetSql(){
     sql.transaction(function(tx){
       tx.executeSql('DROP TABLE fs');
@@ -721,10 +723,10 @@ function switch_dump(name, dft){
   var d = dumps[name];
   //dumpname = name;
   localStorage.dumpname = name;
-  
+
   if(index) index.terminate();
   if(dump) dump.terminate();
-  
+
   indexsize = function(){return d.indexsize};
   dumpsize = function(){return d.dumpsize};
   indexurl = typeof d.indexurl == 'function' ? d.indexurl : function(p){return [d.indexurl, p]};
@@ -771,7 +773,7 @@ var lastPreview = {chunk: -999, entries: [], title: '', lastTime: 0};
 function updatePreview(){
   var chunk = dump.progress() * index.getChunks() * 0.92195; //0.92195 is the sqrt(.85), and I won't tell you how it's significant
   var shiftconst = Math.pow(3.16, 2);
-  
+
   if(chunk - lastPreview.chunk > shiftconst){
     index.readChunkText(Math.floor(chunk), function(e){
       lastPreview.entries = e.split('\n').slice(1, -1).map(function(e){return e.split(/>|\|/)[0]});
@@ -813,7 +815,7 @@ function downloadIndex(){
   index.downloadContiguousChunks(index_progress, Math.floor((1024 * 1024 * 1)/ index.getChunksize()), function(e, fail){
     if(fail == -1) return;
     updateProgress();
-    downloading_index = true;  
+    downloading_index = true;
     setTimeout(downloadIndex, 200);
   })
   //});
