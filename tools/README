@@ -1,6 +1,7 @@
 TODO: make sure you do the sorts with the -df option!
 HACK: cat pi.index | sort -df -t $'|' -k1,1 > pi2.index
 
+http://dumps.wikimedia.org/other/pagecounts-ez/
 
 It's already happened before, I wrote all these utilities and forgot how to use them. In what order and what it does.
 

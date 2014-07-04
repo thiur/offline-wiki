@@ -478,7 +478,7 @@ function VirtualFile(name, size, chunksize, network){
   function writeChunkIndexedDB(chunk, data, callback){
     //var trans = db.transaction(['fs'], IDBTransaction.READ_WRITE);
     var trans = db.transaction(['fs'], 'readwrite');
-    
+
     var store = trans.objectStore('fs');
     var req = store.put({
       data: data,
@@ -695,11 +695,23 @@ var dumps = {
     indexurl: 'http://offline-wiki.googlecode.com/files/2012.index',
     dumpurl: 'http://offline-wiki.googlecode.com/files/2012.lzma'
   },
+  simple2014: {
+    indexsize: 4841174,
+    dumpsize: 56420763,
+    indexurl: 'http://offline-wiki.s3-website-us-west-2.amazonaws.com/2014/simplewiki/simplewiki.index',
+    dumpurl: 'http://offline-wiki.s3-website-us-west-2.amazonaws.com/2014/simplewiki/simplewiki.lzma'
+  },
   simple: {
     indexsize: 4367757,
     dumpsize: 48357515,
     indexurl: 'http://offline-wiki.googlecode.com/files/simple.index',
     dumpurl: 'http://offline-wiki.googlecode.com/files/simple.lzma'
+  },
+  simplex: {
+    indexsize: 14271,
+    dumpsize: 1562298,
+    indexurl: 'dumps/simplex.index',
+    dumpurl: 'dumps/simplex.lzma'
   },
   semega: {
     indexsize: 12513256,
@@ -718,9 +730,14 @@ var index = null, dump = null;
 
 function switch_dump(name, dft){
   if(!dumps[name] && dft){name = dft}
+
+  var nonlocal_name = name;
+
   if((location.host=='localhost' || /\.local/.test(location.host)) && !/local_/.test(name)) name = 'local_'+name;
+
   document.getElementById('dump').value = name.replace('local_','');
-  var d = dumps[name];
+
+  var d = dumps[name] || dumps[nonlocal_name];
   //dumpname = name;
   localStorage.dumpname = name;
 
