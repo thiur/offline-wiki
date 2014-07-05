@@ -183,7 +183,16 @@ function VirtualFile(name, size, chunksize, network){
   }
   var rfs = (window.requestFileSystem||window.webkitRequestFileSystem);
   var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
-  if(rfs && window.webkitStorageInfo){
+
+  // if a blob being loaded locally
+
+  if(typeof network != "string" && typeof network != "function"){
+    file = network;
+    fileEntry = true;
+    getbit = function(){ return 1 }
+    setbit = function(){ }
+
+  }else if(rfs && window.webkitStorageInfo){
     persistent = 1;
     webkitStorageInfo.requestQuota(webkitStorageInfo.PERSISTENT, defaultsize,
       function(grantedQuota){
@@ -731,13 +740,13 @@ var index = null, dump = null;
 function switch_dump(name, dft){
   if(!dumps[name] && dft){name = dft}
 
-  var nonlocal_name = name;
 
-  if((location.host=='localhost' || /\.local/.test(location.host)) && !/local_/.test(name)) name = 'local_'+name;
+  if((location.host=='localhost' || /\.local/.test(location.host)) && !/local_/.test(name) && ('local_'+name) in dumps)
+    name = 'local_'+name;
 
   document.getElementById('dump').value = name.replace('local_','');
 
-  var d = dumps[name] || dumps[nonlocal_name];
+  var d = dumps[name];
   //dumpname = name;
   localStorage.dumpname = name;
 
@@ -759,7 +768,16 @@ function switch_dump(name, dft){
   setTimeout(updateProgress, 10);
   setTimeout(beginDownload, 1337);
 }
-switch_dump(localStorage.dumpname, 'twelve');
+
+var default_dump = "simplex";
+
+if(location.hostname == "offline-wiki.googlecode.com"){
+  default_dump = "twelve";
+}
+
+
+switch_dump(localStorage.dumpname, default_dump);
+
 
 
 
@@ -842,4 +860,69 @@ function downloadIndex(){
 function nero(){
   index.reset();
   dump.reset();
+}
+
+
+document.body.addEventListener("dragenter", dragEnter, false);
+document.body.addEventListener("dragexit", dragExit, false);
+document.body.addEventListener("dragover", dragOver, false);
+document.body.addEventListener("drop", drop, false);
+
+function noopHandler(evt) {
+  evt.stopPropagation();
+  evt.preventDefault();
+}
+
+function dragOver(evt){
+  noopHandler(evt)
+  document.body.className = 'dragging'
+}
+
+function dragEnter(evt){
+  noopHandler(evt)
+  document.body.className = 'dragging'
+}
+function dragExit(evt){
+  noopHandler(evt)
+  document.body.className = ''
+}
+
+function drop(evt){
+  noopHandler(evt)
+  local_files(evt.dataTransfer.files);
+  document.body.className = ''
+}
+
+function local_files(files){
+  if(files.length < 2){
+    return alert("You must select at least two files: an index file and at least one dump file")
+  }
+  var indices = [], dumps = []
+  for(var i = 0; i < files.length; i++){
+    var file = files[i];
+    if(/\.index$/.test(file.name)){
+      indices.push(file)
+    }else if(/\.lzma$/.test(file.name)){
+      dumps.push(file)
+    }
+  }
+  if(indices.length == 0){
+    return alert("The index file must have the file extension .index")
+  }
+
+  if(dumps.length == 0){
+    return alert("The dump file must have the file extension .lzma")
+  }
+  if(index) index.terminate();
+  if(dump) dump.terminate();
+
+  index_progress = 0;
+  dump_progress = 0;
+
+  index = VirtualFile('file_index', indices[0].size, 1024 * 4, indices[0]); //4KiB chunk size
+  dump = VirtualFile('file_dump',   dumps[0].size,   1024 * 500, dumps[0]); //500KB chunk size (note, that it has to be a multiple of the underlying file subdivision size
+
+  console.log("initialized fs locally");
+  setTimeout(updateProgress, 10);
+  setTimeout(beginDownload, 1337);
 }

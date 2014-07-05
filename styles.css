@@ -5,10 +5,14 @@ body {
   color: #111111;
   background-color: #e8e8e8;
   background-image: url(image/bg.png);
-  background-attachment: fixed; 
+  background-attachment: fixed;
   margin-right: 20px;
   margin-left: 20px;
   margin-top: 0px;
+}
+
+body.dragging {
+  background: #5ea05f;
 }
 
 
@@ -27,7 +31,7 @@ body {
 
 #content {
   position: relative;
-  
+
 	line-height: 1.5em;
 }
 
@@ -84,7 +88,7 @@ a.new {
 }
 
 #titlebar {
-  position: absolute; 
+  position: absolute;
 	top: 0px;
 	left: 0;
   background-color: #e8e8e8;
@@ -124,7 +128,7 @@ a.new {
 	width: 200px;
 	outline: none;
 	margin-top: 10px;
-	
+
 }
 
 #search:focus {
@@ -137,7 +141,7 @@ a.new {
 	background-color: white;
 	border: 1px solid #aaa;
 	cursor: default;
-	overflow-x: hidden;	
+	overflow-x: hidden;
 	-webkit-box-shadow: 0px 5px 10px #aaa;
 	box-shadow: 0px 5px 10px #aaa;
 }
@@ -271,7 +275,7 @@ a.next, a.prev {
     position: relative;
     width: 100%;
     margin: 0px;
-    
+
   }
   #outline {
     display: none;

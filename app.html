@@ -82,6 +82,7 @@
   </p>
    <p>
     <select id="dump" onchange="switch_dump(this.value)">
+
       <option value="leet">1337 December 2011 (13.7MB)</option>
       <option value="pi">314k December 2011 (1GB) </option>
       <option value="semega">500k October 2012 (1.3GB) </option>
@@ -89,7 +90,19 @@
       <option value="simple">Simple English October 2012 (52MB) </option>
       <option value="simple2014">Simple English June 2014 (59MB) </option>
       <option value="simplex">1k Simple English June 2014 (2MB) </option>
+
     </select>
+
+
+   </p>
+   <p>
+
+     You can also choose to <b>open a local index/dump pair</b> by selecting them from the file field below. You can also drag and drop the files onto this page. Note that you need to select <b>two</b> files.
+
+     This is the recommended approach on browsers that don't support requestFileSystem.
+</p><p>
+     <input type="file" multiple onchange="local_files(this.files)">
+
    </p>
     <p>
     Select the <b>parsing engine</b>. This takes the wikitext and turns it into html which is then meant for human eyes.
