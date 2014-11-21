@@ -1,130 +1,13 @@
-
-function binarySearch(value, low, high, win, threshold, parser, callback){
-	coreSearch(Math.round(low + (high - low) / 2));
-	function coreSearch(mid){
-		index.readText(mid - win, win * 2, function(text){
-		  if(text == false) return callback(false);
-			try{
-				var result = parser(text); //maybe ideally something closer to the exact center would be better.
-			}catch(err){
-			  console.log('had error parsing', text, "hello");
-				return coreSearch(mid + win + 10000);
-			}
-			var offset = text.split("\n")[0].length + 1;
-				
-			if(high - low < threshold * 2){
-				return callback(low, high, result, text);
-			}
-			//console.log(result, result < value ? '<' : '>', value);
-			if(result < value){
-			  low = mid - win;
-			  coreSearch(Math.round(low + (high - low) / 2))
-				//binarySearch(value, mid - win, high, win, threshold, parser, callback);
-			}else{
-			  high = mid + win;
-			  coreSearch(Math.round(low + (high - low) / 2))
-				//binarySearch(value, low, mid + win, win, threshold, parser, callback);
-			}
-		})
-	}
-}
-
-
-
 function defaultParser(text){
-	return text && slugfy(text.split("\n")[1].split(/\||\>/)[0])
+  return text && slugfy(text.split("\n")[1].split(/\||\>/)[0])
 }
-
 
 var midpointCache = {};
-function binarySearch2(value, callback){
-  var low = 0, high = index.getChunks();
-  var delta = 0;
-  var old = Infinity;
-  value = slugfy(value);
-  var terminate = false;
-  var start = new Date;
-  function getMidvalue(mid, callback){
-    if(mid in midpointCache) return callback(midpointCache[mid]);
-    index.readChunkText(mid, function(e){
-      if(e == false){
-        delta++;
-        return coreSearch()
-      }
-      var r = e.split('\n');
-      var m = r[Math.floor(r.length / 2)].split(/\||>/);
-      var result = slugfy(m[0]);
-      midpointCache[mid] = result;
-      callback(result);
-    })
-  }
-  function coreSearch(){
-    if(terminate) return;
-    var diff = high - low;
-    if(old - diff < 2){
-      //console.log('search time', new Date - start);
-      return callback(high, low);
-    }
-    old = diff;
-    var mid = Math.round(low/2 + high/2) + (Math.pow(-1, delta) * Math.ceil(delta/2));
-    if(mid <= low || mid >= high || high <= low) return callback(false); //total failure
-    getMidvalue(mid, function(result){
-      delta = 0;
-      if(result < value){
-        low = mid - 1;
-      }else{
-        high = mid + 1;
-      }
-      coreSearch();
-    })
-  }
-  coreSearch();
-  return function(){
-    terminate = true;
-  }
-}
-
-function binarySearch3_old(value, callback){
-  value = slugfy(value);
-  var low = 0, high = index.getChunks();
-  var terminate = false;
-  var start = +new Date;
-  
-  
-  function core(){
-    if(terminate) return;
-    var center = low/2 + high/2;
-    if(high - low < 1){
-      console.log('search time', new Date - start);
-      return callback(center);
-    }
-    var block = Math.floor(center);
-    var rem = center % 1;
-    index.readChunkText(block, function(e){
-      var c = Math.round(rem * e.length);
-      var n = 0, s;
-      do {
-        n++;
-        s = e.slice(Math.max(0, c - n), c + n)
-      } while(!/\n.*\n/.test(s));
-      var r = slugfy(s.match(/\n(.*)\n/)[1].split(/\||>/)[0]);
-      if(r < value){
-        low = block + Math.max(0, c - n - 137)/e.length
-      }else if(r > value){
-        high = block + (c + n + 137)/e.length
-      }
-      core()
-    })
-  }
-  core();
-  return function(){terminate = true}
-}
-
 
 function binarySearch3(value, callback){
   value = slugfy(value);
   //http://en.wikipedia.org/wiki/Almost_integer
-  var almost = Math.pow(Math.E, Math.PI*Math.sqrt(43)) % 1;
+  var almost = Math.pow(Math.E, Math.PI * Math.sqrt(43)) % 1;
   var low = 0, high = index.getChunks();
   var chunksize = index.getChunksize();
   var terminate = false;
@@ -153,13 +36,13 @@ function binarySearch3(value, callback){
     if(terminate) return;
     var center = low/2 + high/2;
     if(Math.abs(lastdiff - (high - low)) < 0.001){
-      //console.log(value, center);
+      // console.log(value, center);
       //console.log('terminating');
       return callback(center);
     }
     lastdiff = high - low;
     middle(center, function(x){
-      //console.log(x[0] < value ? 'low' : 'high', x[0], low, high, x[1], x[2]);
+      // console.log(x[0] < value ? 'low' : 'high', x[0], low, high, x[1], x[2]);
       if(x[0] < value) low = x[1];
       else if(x[0] > value) high = x[2];
       core();
@@ -172,53 +55,48 @@ function binarySearch3(value, callback){
 
 function runSearch(query, callback, fuzzy){
   var c = index.getChunksize();
-	//binarySearch(slugfy(query), 0, indexsize(), 200, 800, defaultParser, function(low, high, res){
-	return binarySearch3(query, function(midchunk){
-	  var mid = midchunk * index.getChunksize();
-	  //var high = h * c, low = l * c;
-	  //binarySearch(slugfy(query), l * c, h * c, 200, 800, defaultParser, function(low, high, res){
-	    //if(low === false) return callback(false);
-	    var win = 800;
-	    //console.log(mid)
-		  index.readText(mid - win, win * 2, function(text){
-		    //console.log(text);
-		    if(text == false) return callback(false);
-			  //console.log(text);
-		    var results = text.split('\n').slice(1, -1)
-			  .filter(function(x){
-			    var parts = x.split(/\||\>/), title = parts[0], ptr = parts[1];
-			    return title && (fuzzy || (title.toLowerCase().trim().replace(/[^a-z0-9]/g,'') == query.toLowerCase().trim().replace(/[^a-z0-9]/g,'')))
-			  });
-			  if(fuzzy != 2){
-			    results = results.map(function(x){
-				    var parts = x.split(/\||\>/), title = parts[0].replace(/_/g, ' '), ptr = parts[1];
-				    return {title: title, pointer: /\>/.test(x) ? ptr : parse64(ptr), redirect: /\>/.test(x), score: scoreResult(title, query)}
-			    }).sort(function(a, b){
-				    return a.score - b.score
-			    })
-			  }
-			  callback(results, mid);
-		  })
-		//})
-	})
+  //binarySearch(slugfy(query), 0, indexsize(), 200, 800, defaultParser, function(low, high, res){
+  return binarySearch3(query, function(midchunk){
+    var mid = Math.min(indexsize(), midchunk * index.getChunksize());
+    // console.log('binary search', midchunk, mid);
+    //var high = h * c, low = l * c;
+    //binarySearch(slugfy(query), l * c, h * c, 200, 800, defaultParser, function(low, high, res){
+      //if(low === false) return callback(false);
+      var win = index.getChunksize();
+      //console.log(mid)
+      index.readText(mid - win, win * 2, function(text){
+        if(text == false) return callback(false);
+        // console.log('index', text);
+        var results = text.split('\n').slice(1, -1)
+        .filter(function(x){
+          var parts = x.split(/\||\>/), title = parts[0], ptr = parts[1];
+          return title && (fuzzy || (title.toLowerCase().trim().replace(/[^a-z0-9]/g,'') == query.toLowerCase().trim().replace(/[^a-z0-9]/g,'')))
+        });
+        if(fuzzy != 2){
+          results = results.map(function(x){
+            var parts = x.split(/\||\>/), title = parts[0].replace(/_/g, ' '), ptr = parts[1];
+            return {title: title, pointer: /\>/.test(x) ? ptr : parse64(ptr), redirect: /\>/.test(x), score: scoreResult(title, query)}
+          }).sort(function(a, b){
+            return a.score - b.score
+          })
+        }
+        callback(results, mid);
+      })
+    //})
+  })
 }
 
-
-
-
 var indexCache = {};
-
-
 //stolen from quirksmode
 function findPos(obj) {
-	var curleft = curtop = 0;
-	if (obj.offsetParent) {
-	  do {
-			  curleft += obj.offsetLeft;
-			  curtop += obj.offsetTop;
-	  } while (obj = obj.offsetParent);
-	}
-	return [curleft,curtop];
+  var curleft = curtop = 0;
+  if (obj.offsetParent) {
+    do {
+        curleft += obj.offsetLeft;
+        curtop += obj.offsetTop;
+    } while (obj = obj.offsetParent);
+  }
+  return [curleft,curtop];
 }
 
 function reposition(){
@@ -253,61 +131,61 @@ autocomplete(document.getElementById('search'), document.getElementById('autocom
 
 
 
-	//if(autocompleteWorker) autocompleteWorker();
-	
-	autocompleteWorker = runSearch(query, function(results){
-	  
-		var map = {};
-		var filtered = results.map(function(x){
-			return x.redirect ? x.pointer : x.title;
-		}).filter(function(x){
-		  if(x in map) return 0;
-		  return map[x] = 1;
-		}).slice(0,15).map(function(x){
-			//this is probably one of my cleverest regexes ever
-			//return x.replace(new RegExp('('+query.split('').join('|')+')','gi'), '|$1|').replace(/((\|.\|){2,})/g, '<b>$1</b>').replace(/\|/g,'')
-			return x.replace(new RegExp('('+query.replace(/[^\w]/g, ' ').replace(/ +/g,'|')+')', 'gi'), '<b>$1</b>')
-		});
-		callback(filtered)
-	}, true)
+  //if(autocompleteWorker) autocompleteWorker();
+  
+  autocompleteWorker = runSearch(query, function(results){
+    
+    var map = {};
+    var filtered = results.map(function(x){
+      return x.redirect ? x.pointer : x.title;
+    }).filter(function(x){
+      if(x in map) return 0;
+      return map[x] = 1;
+    }).slice(0,15).map(function(x){
+      //this is probably one of my cleverest regexes ever
+      //return x.replace(new RegExp('('+query.split('').join('|')+')','gi'), '|$1|').replace(/((\|.\|){2,})/g, '<b>$1</b>').replace(/\|/g,'')
+      return x.replace(new RegExp('('+query.replace(/[^\w]/g, ' ').replace(/ +/g,'|')+')', 'gi'), '<b>$1</b>')
+    });
+    callback(filtered)
+  }, true)
 }, function(query){
   query = query || '';
-	if(new Date - lastSearchTime > 3141){ //Pi! also 3sec is like google instant's magic number apparnetly too
-		document.title = query;
+  if(new Date - lastSearchTime > 3141){ //Pi! also 3sec is like google instant's magic number apparnetly too
+    document.title = query;
     history.pushState({}, '', '?'+query.replace(/ |%20/g,'_'));
-	}
-	lastSearchTime = new Date;
-	loadArticle(query);
+  }
+  lastSearchTime = new Date;
+  loadArticle(query);
 });
 
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_', clookup = {};
 for(var i = 0; i < chars.length; i++) clookup[chars[i]] = i;
 
 function parse64(string){
-	//base 64 (note its not the base64 you know and love) conversions
-	if(!string) return NaN;
-	var n = 0;
-	for(var l = string.length, i = 0; i < l; i++) n = n * 64 + clookup[string[i]];
-	return n;
+  //base 64 (note its not the base64 you know and love) conversions
+  if(!string) return NaN;
+  var n = 0;
+  for(var l = string.length, i = 0; i < l; i++) n = n * 64 + clookup[string[i]];
+  return n;
 }
 
 
 
 function findBlock(query, callback){
 
-	runSearch(query, function(results, pos){
-		if(!results[0]){
-		  callback(query, 0, -13);
-		}else if(results[0].redirect){
-		  if(results[0].pointer != query){
-			  findBlock(results[0].pointer, callback)
-			}else{
-			  callback(query, 0, -29);
-			}
-		}else{
-			callback(results[0].title, results[0].pointer, pos)
-		}
-	})
+  runSearch(query, function(results, pos){
+    if(!results[0]){
+      callback(query, 0, -13);
+    }else if(results[0].redirect){
+      if(results[0].pointer != query){
+        findBlock(results[0].pointer, callback)
+      }else{
+        callback(query, 0, -29);
+      }
+    }else{
+      callback(results[0].title, results[0].pointer, pos)
+    }
+  })
 }
 
 //another version by me: http://snippets.dzone.com/posts/show/6942
@@ -317,39 +195,39 @@ function damlev( str1, str2 ){
   if(!str1)str1="";
   if(!str2)str2="";
 
-	var i, j, cost, d = [];
+  var i, j, cost, d = [];
   str1 = str1.split("");
   str2 = str2.split("");
-	
-	if (str1.length == 0) return str2.length;
-	if (str2.length == 0) return str1.length;
-	
-	for (i = 0; i <= str1.length; i++){
-		d[ i ] = new Array();
-		d[ i ][ 0 ] = i;
-	}
+  
+  if (str1.length == 0) return str2.length;
+  if (str2.length == 0) return str1.length;
+  
+  for (i = 0; i <= str1.length; i++){
+    d[ i ] = new Array();
+    d[ i ][ 0 ] = i;
+  }
  
-	for (j = 0; j <= str2.length; j++) d[ 0 ][ j ] = j;
+  for (j = 0; j <= str2.length; j++) d[ 0 ][ j ] = j;
  
-	for ( i = 1; i <= str1.length; i++ ){
-		for ( j = 1; j <= str2.length; j++ ){
-			cost = str1[i - 1] != str2[j - 1]; //false == 0, true == 1
+  for ( i = 1; i <= str1.length; i++ ){
+    for ( j = 1; j <= str2.length; j++ ){
+      cost = str1[i - 1] != str2[j - 1]; //false == 0, true == 1
 
-			d[ i ][ j ] = Math.min(
+      d[ i ][ j ] = Math.min(
                             d[ i - 1 ][ j ] + 1,
                             d[ i ][ j - 1 ] + 1,
                             d[ i - 1 ][ j - 1 ] + cost
                             );
-			if(i > 1 && j > 1 && str1[i-1] == str2[j-2] && str1[i-2] == str2[j-1]){
+      if(i > 1 && j > 1 && str1[i-1] == str2[j-2] && str1[i-2] == str2[j-1]){
         d[i][j] = Math.min(
                           d[i][j],
                           d[i-2][j-2] + cost   // transposition
                           )
        }
-		}
-	}
-	
-	return d[str1.length][str2.length];
+    }
+  }
+  
+  return d[str1.length][str2.length];
 }
 
 codepoint2name={"34":"quot","38":"amp","60":"lt","62":"gt","160":"nbsp","161":"iexcl","162":"cent","163":"pound","164":"curren","165":"yen","166":"brvbar","167":"sect","168":"uml","169":"copy","170":"ordf","171":"laquo","172":"not","173":"shy","174":"reg","175":"macr","176":"deg","177":"plusmn","178":"sup2","179":"sup3","180":"acute","181":"micro","182":"para","183":"middot","184":"cedil","185":"sup1","186":"ordm","187":"raquo","188":"frac14","189":"frac12","190":"frac34","191":"iquest","192":"Agrave",

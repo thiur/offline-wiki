@@ -10,12 +10,12 @@ function decompressPage(compressed, callback){
   worker.addEventListener('message', function(e){
     endtime = +new Date;
     console.log("Decompression time " + ( endtime - starttime));
-	  var block = e.data;
-	  if(block.length == 0){
-      block = decompressBuffer(compressed);	  
-	  }
+    var block = e.data;
+    if(block.length == 0){
+      block = decompressBuffer(compressed);   
+    }
     handleDecompressed(block);
-  	callback();
+    callback();
   }, false);
   starttime = +new Date;
   worker.postMessage(compressed);
@@ -23,15 +23,15 @@ function decompressPage(compressed, callback){
 
 
 function handleDecompressed(block){
-	var re = /=([^=\n\#\<\>\[\]\|\{\}]+)=\n\n\n\n/g;
-	var matches = re.exec(block), lastIndex = 0;
-	//console.log(block);
+  var re = /=([^=\n\#\<\>\[\]\|\{\}]+)=\n\n\n\n/g;
+  var matches = re.exec(block), lastIndex = 0;
+  //console.log(block);
   while (matches){
-	  articleCache[matches[1].trim()] = block.slice(re.lastIndex, (matches = re.exec(block))?matches.index:undefined)
-	  //console.log(matches[1].trim())
+    articleCache[matches[1].trim()] = block.slice(re.lastIndex, (matches = re.exec(block))?matches.index:undefined)
+    //console.log(matches[1].trim())
   }
-	//portal 2 is coming tomorrow so this is obligatory
-	//window.companioncube = block;
+  //portal 2 is coming tomorrow so this is obligatory
+  //window.companioncube = block;
 }
 
 function decompressBuffer(buffer){
@@ -75,14 +75,14 @@ onmessage = function(e){
   //var body = raw.slice(13);
 
   var createInStream = function(data) {
-	  var inStream = {
-	    data: data,
-	    offset: 0,
-	    readByte: function(){
-	      return this.data[this.offset++];
-	    }
-	  };
-	  return inStream;
+    var inStream = {
+      data: data,
+      offset: 0,
+      readByte: function(){
+        return this.data[this.offset++];
+      }
+    };
+    return inStream;
   };
   var s = '';
   var outStream = {
