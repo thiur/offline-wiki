@@ -198,6 +198,7 @@ function VirtualFile(name, size, chunksize, network){
       function(grantedQuota){
         console.log("Granted quota:", grantedQuota)
         rfs(window.PERSISTENT, defaultsize, function(filesystem){
+          console.log('got filesystem');
           filesystem.root.getFile(name+'_fs', {create:true, exclusive: false}, function(e){
             fileEntry = e;
             e.file(function(f){
@@ -347,10 +348,10 @@ function VirtualFile(name, size, chunksize, network){
     var end = start + 1; //read minimum of one chunk
     if(start > chunks) return callback(false);
     while(!getbit(end) && (end - start) < maximum && end < chunks) end++;
-    //console.log('reading', end-start,'chunks starting at',start);
+    // console.log('reading', end-start,'chunks starting at',start);
 
     readChunksXHR(start, end - start, function(e){
-      //console.log("read from XHR", name);
+      // console.log("read from XHR", name);
       if(e != false) writeChunksPersistent(start, e, callback);
     });
 
@@ -389,12 +390,17 @@ function VirtualFile(name, size, chunksize, network){
 
 
   function writeChunksPersistent(chunk, data, callback){
+    
     if(terminate) return;
+    
     if(fileEntry){
+      // console.log('writing file', chunk, data);
       writeChunksFile(chunk, data, callback);
     }else if(db || sql){
+      // console.log('writing db', chunk, data);
       writeChunksDB(chunk, data, callback);
     }else{
+      // console.log('cant write', chunk, data);
       callback(data, -1);
     }
   }
@@ -542,7 +548,7 @@ function VirtualFile(name, size, chunksize, network){
     xhr.setRequestHeader('Range', 'bytes='+url[1]+'-'+(url[1] + chunksize*size - 1));
     xhr.responseType = 'arraybuffer';
     xhr.onload = function(){
-      //console.log("xhr done woot"+xhr.response);
+      // console.log("xhr done woot"+xhr.response);
       if(terminate) return;
       if(xhr.status >= 200 && xhr.status < 300 && xhr.readyState == 4){
         callback(xhr.response);
@@ -550,6 +556,9 @@ function VirtualFile(name, size, chunksize, network){
         callback(false);
       }
     }
+    // xhr.onreadystatechange = function(){
+    //   console.log('radystatechange', xhr.readyState)
+    // }
     xhr.onerror = function(){
       callback(false);
     }
@@ -722,6 +731,30 @@ var dumps = {
     indexurl: 'dumps/simplex.index',
     dumpurl: 'dumps/simplex.lzma'
   },
+  simpledict2014: {
+    indexsize: 304628,
+    dumpsize: 1422998 ,
+    indexurl: 'dumps/simpledict.index',
+    dumpurl: 'dumps/simpledict.lzma'
+  },
+  enwiktionary2014: {
+    indexsize: 9552314,
+    dumpsize: 46693348,
+    indexurl: 'https://s3-us-west-2.amazonaws.com/offline-wiki/2014/enwiktionary/wiktionary.index',
+    dumpurl: 'https://s3-us-west-2.amazonaws.com/offline-wiki/2014/enwiktionary/wiktionary.lzma'
+  },
+  fourteen4k: {
+    indexsize: 87636,
+    dumpsize: 42974257,
+    indexurl: 'http://offline-wiki.s3-website-us-west-2.amazonaws.com/2014/enwiki/enwiki4k.index',
+    dumpurl: 'http://offline-wiki.s3-website-us-west-2.amazonaws.com/2014/enwiki/enwiki4k.lzma'
+  },
+  fourteen600k: {
+    indexsize: 15763478,
+    dumpsize: 1786467594,
+    indexurl: 'http://offline-wiki.s3-website-us-west-2.amazonaws.com/2014/enwiki/enwiki600k.index',
+    dumpurl: 'http://offline-wiki.s3-website-us-west-2.amazonaws.com/2014/enwiki/enwiki600k.lzma'
+  },
   semega: {
     indexsize: 12513256,
     dumpsize: 1326480986,
@@ -863,10 +896,10 @@ function nero(){
 }
 
 
-document.body.addEventListener("dragenter", dragEnter, false);
-document.body.addEventListener("dragexit", dragExit, false);
-document.body.addEventListener("dragover", dragOver, false);
-document.body.addEventListener("drop", drop, false);
+document.documentElement.addEventListener("dragenter", dragEnter, false);
+document.documentElement.addEventListener("dragexit", dragExit, false);
+document.documentElement.addEventListener("dragover", dragOver, false);
+document.documentElement.addEventListener("drop", drop, false);
 
 function noopHandler(evt) {
   evt.stopPropagation();
@@ -918,11 +951,17 @@ function local_files(files){
 
   index_progress = 0;
   dump_progress = 0;
-
-  index = VirtualFile('file_index', indices[0].size, 1024 * 4, indices[0]); //4KiB chunk size
-  dump = VirtualFile('file_dump',   dumps[0].size,   1024 * 500, dumps[0]); //500KB chunk size (note, that it has to be a multiple of the underlying file subdivision size
+  indexsize = function(){ return indices[0].size}
+  dumpsize = function(){ return dumps[0].size}
+  
+  index = VirtualFile('file_index', indexsize(), 1024 * 4, indices[0]); //4KiB chunk size
+  dump = VirtualFile('file_dump',   dumpsize(),   1024 * 500, dumps[0]); //500KB chunk size (note, that it has to be a multiple of the underlying file subdivision size
 
   console.log("initialized fs locally");
   setTimeout(updateProgress, 10);
   setTimeout(beginDownload, 1337);
+
+  setTimeout(function(){
+    loadArticle('Special:Dump')
+  }, 100)
 }
