@@ -23,8 +23,9 @@ def end_element(name):
       print >> sys.stderr, count
     #print title.strip()
   action = 0
+  title = title.strip()
   if title != '' and name == 'page':
-    print '=', title.strip(), '=\n\n\n'
+    print '=', title, '=\n\n\n'
     print page.strip()
     
 def char_data(data):

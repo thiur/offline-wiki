@@ -17,8 +17,10 @@ cat nofiles.txt | head -n 100000 > top100k.txt
 
 bzcat enwiki-20111201-pages-articles.xml.bz2 | python parse.py > popular_articles.txt
 
+Use unlimited.py instead of parse.py if you want to export everything rather than just the popular things
 
-python index.py < articles_1337.txt | sort | python create_sorted.py > sorted_1337.txt
+
+python index.py < articles_1337.txt | sort --ignore-case --dictionary-order | python create_sorted.py > sorted_1337.txt
 
 python mindex.py < sorted_1337.txt
 

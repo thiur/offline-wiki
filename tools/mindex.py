@@ -7,8 +7,8 @@ xartstart = 0
 artstart = 0
 xbody = ''
 buff = ''
-out = open('simple.lzma', 'w')
-index = open('simple.index', 'w')
+out = open('simpledict.lzma', 'w')
+index = open('simpledict.index', 'w')
 
 def compress(s):
   proc = subprocess.Popen(['lzma', '-f'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -45,15 +45,25 @@ for line in sys.stdin:
   if last0 == '\n' and last1 == '\n' and last2 == '\n' and last3.startswith('= '):
     new_header = last3 + last2 + last1 + last0
     m = re.match('\#REDIRECT.*\[\[([^\]]+)\]\]', article, re.I)
-    if m is None:
-      index.write(title + "|" + num_encode(out.tell()) + '\n')
-      buff += header + libstrip.minify(article[:-len(new_header)])
-      if len(buff) > 256 * 1024:
-        print "Wrote buffer", len(buff)
-        out.write(compress(buff))
-        buff = ''
+    title = last3[2:-3]
+    if title.split(":")[0] in ["Citations", "Category", "Rhymes", "Thread", "MediaWiki", "Template", "Module", "Wiktionary", "Help", "Appendix"]:
+      # print "skipping category"
+      pass
+    elif m is None:
+      minified = libstrip.dictionary_minify(article[:-len(new_header)])
+      if minified != "" and minified != None:
+        index.write(title + "|" + num_encode(out.tell()) + '\n')
+        buff += header + minified
+        if len(buff) > 256 * 1024:
+          print "Wrote buffer", len(buff)
+          out.write(compress(buff))
+          buff = ''
     else:
   		index.write(title + ">" + m.group(1) + "\n")
-    title = last3[2:-3]
+    
     header = new_header
     article = ''
+
+print "Wrote final buffer", len(buff)
+out.write(compress(buff))
+buff = ''

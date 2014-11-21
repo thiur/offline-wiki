@@ -14,7 +14,7 @@ for line in sys.stdin:
     action += 1
   elif line != '\n':
     if action == 4:
-      print title.replace(" ", "_"), artstart, xartstart
+      print unicode(title.replace(" ", "_"), errors='ignore'), artstart, xartstart
       title = xtitle
       artstart = xartstart
     action = 0

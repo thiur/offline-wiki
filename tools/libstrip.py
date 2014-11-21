@@ -2,6 +2,30 @@ import re, sys
 ALLOWED = "frac,nowrap,see,main,convert,-,ipa-en".split(',')
 BANNED_SGML = "comment,ref".split(',')
 BANNED_SECTIONS = "external links,bibliography,references,further reading".split(',')
+
+
+def dictionary_minify(text):
+  # this extracts parts from wiktionary
+  
+  # split = re.split(r'\n==([^=]*?)==\n', "\n\n" + text + "\n\n")
+  # if "English" not in split:
+  #   return ""
+  # text = split[split.index("English") + 1].strip()
+
+  text = re.sub(r'\[\[\w{2,3}:.+\]\]', '', text)
+  text = re.sub(r'\[\[(Category):.+\]\]', '', text)
+  text = re.sub(r'\{\{(wikipedia|BE850|AWL|BNC1HW|BNC1000HW|BNC\d.*)(\|.*)?\}\}', '', text)
+  text = re.sub(r'\*?\s*\{\{(audio\|.*?)\}\}', '', text)
+  text = re.sub(r'\[\[(File|Image)\:.*?\]\]', '', text)
+  text = re.sub(r'==+\s*Pronunciation\s*==+', '', text)
+  trans = re.compile(r'====\s*Translations\s*====.*\{\{trans-bottom\}\}', re.DOTALL)
+  text = re.sub(trans, '', text)
+
+  text = re.sub(r'\n\s+\n', '\n\n', text)
+
+  return text.strip()
+
+
 def minify(lines):
   reset()
   for line in lines.split('\n'):

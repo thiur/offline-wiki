@@ -1,5 +1,5 @@
 import sys
-f = open('popular_simple.txt', 'r')
+f = open('simplewiktionary.txt', 'r')
 for line in sys.stdin:
   (title, start, end) = line.split(' ')
   start = int(start)
